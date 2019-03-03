@@ -3,21 +3,24 @@ import inspect
 
 class Creator:
 
-    """
-        object_name -> reference to object which will be treated as chromosome
-    """
     def __init__(self, object_reference):
+        """
+            Attributes:
+                object_reference: reference to object which will be treated as chromosome
+        """
         if inspect.isclass(object_reference):
             self.chromosome = object_reference
         else:
             raise TypeError('Value should be a reference to a class')
 
-    """
-        n -> amount of elements to be created
-        args, kwargs -> arguments to initialize object
-        return -> list of objects created using arguments
-    """
     def create(self, n, *args, **kwargs):
+        """
+            Attributes:
+               n: amount of elements to be created
+               args, kwargs: arguments to initialize object
+            Returns:
+               list of objects created using arguments
+        """
         # print(n, end=" ")
         # print(*args, end=" ")
         # for key, val in kwargs.items():
