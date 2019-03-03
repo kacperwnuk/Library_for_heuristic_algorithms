@@ -6,9 +6,9 @@ class Creator:
     """
         object_name -> reference to object which will be treated as chromosome
     """
-    def __init__(self, object_name):
-        if inspect.isclass(object_name):
-            self.chromosome = object_name
+    def __init__(self, object_reference):
+        if inspect.isclass(object_reference):
+            self.chromosome = object_reference
         else:
             raise TypeError('Value should be a reference to a class')
 
