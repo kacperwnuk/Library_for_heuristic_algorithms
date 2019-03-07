@@ -13,7 +13,7 @@ class Creator:
         else:
             raise TypeError('Value should be a reference to a class')
 
-    def create(self, n, *args, **kwargs):
+    def create(self, n: int, *args, **kwargs):
         """
             Attributes:
                n: amount of elements to be created

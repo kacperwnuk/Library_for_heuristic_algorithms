@@ -7,10 +7,11 @@ class Toolkit:
     def __init__(self):
         self.weights = tuple()
 
-    def set_fitness_weights(self, weights):
+    def set_fitness_weights(self, weights: 'tuple of floats'):
         """
             Setting fitness weights:
                 <0 -> minimize
+
                 >=0 -> maximize
 
             Attributes:
@@ -44,7 +45,7 @@ class Toolkit:
         else:
             raise TypeError('Chromosomes should be passed in list!')
 
-    def calculate_fitness_values(self, individuals, list_of_funcs, list_of_attributes=None):
+    def calculate_fitness_values(self, individuals: list, list_of_funcs, list_of_attributes=None):
         """
             Modifying existing population, not creating new one.
             If there is no list_of_attributes then chromosome is passed to function.
@@ -78,7 +79,7 @@ class Toolkit:
                                           zip(list_of_funcs, list_of_attributes))
 
     @staticmethod
-    def select_random(individuals, k):
+    def select_random(individuals: list, k: int):
         """
             Attributes:
                 individuals: list of individuals
@@ -89,7 +90,7 @@ class Toolkit:
 
         return random.sample(individuals, k)
 
-    def select_best(self, individuals, k, key=0):
+    def select_best(self, individuals: list, k: int, key=0):
         """
             Picks best k individuals
             Attributes:
@@ -107,7 +108,7 @@ class Toolkit:
 
         return sorted(individuals, key=lambda x: x.values[key], reverse=should_reverse)[:k]
 
-    def select_worst(self, individuals, k, key=0):
+    def select_worst(self, individuals: list, k: int, key=0):
         """
             Picks worst k individuals
             Attributes:
@@ -125,7 +126,7 @@ class Toolkit:
 
         return sorted(individuals, key=lambda x: x.values[key], reverse=should_reverse)[:k]
 
-    def select_roulette(self, individuals, k, key=0, replacement=False):
+    def select_roulette(self, individuals: list, k: int, key=0, replacement: bool=False):
         """
             Picks k individuals using roulette method
             https://en.wikipedia.org/wiki/Fitness_proportionate_selection
@@ -144,15 +145,13 @@ class Toolkit:
         """
         if self.weights[key] < 0:
             raise ValueError('Roulette selection works only with maximising problem!')
-
-        sum_fitness = sum(ind.values[key] for ind in individuals)
-
-        if self.weights[key] >= 0:
+        else:
+            sum_fitness = sum(ind.values[key] for ind in individuals)
             probabilities = [ind.values[key] / sum_fitness for ind in individuals]
 
-        return numpy.random.choice(individuals, k, replace=replacement, p=probabilities)
+        return numpy.random.choice(individuals, k, replace=replacement, p=probabilities).tolist()
 
-    def select_linear(self, individuals, k, key=0, replacement=False):
+    def select_linear(self, individuals: list, k: int, key=0, replacement: bool=False):
         """
             Picks k individuals using linear rank selection
             It is possible that in a return list there will be duplications of individuals!
@@ -163,6 +162,7 @@ class Toolkit:
                 replacement: determines if individual can be chosen more than once
             Locals:
                 probabilities: list of probabilities of individuals
+                _sum: sum from 1 to n, used to calculate probability
             Returns:
                 list of picked individuals
         """
@@ -174,10 +174,53 @@ class Toolkit:
         _sum = (1 + n) * n / 2
         probabilities = [i / _sum for i in range(n, 0, -1)]
 
-        return numpy.random.choice(sorted_individuals, k, replace=replacement, p=probabilities)
+        return numpy.random.choice(sorted_individuals, k, replace=replacement, p=probabilities).tolist()
+
+    def select_tournament(self, individuals: list, k: int, n: int, key=0, replacement: bool=False):
+        """
+            Picks k individuals using tournament selection
+            In each tournament the best individual is picked.
+            It is possible that in a return list there will be duplications of individuals!
+            Attributes:
+              individuals: list of individuals
+              k: amount of individuals to be picked
+              n: amount of individuals which will take part in each tournament
+              key: determines which fitness value should be used
+              replacement: determines if individual can be chosen more than once
+            Locals:
+                chosen: list of picked individuals
+            Returns:
+              list of picked individuals
+        """
+        if not replacement and len(individuals) < k:
+            raise ValueError('Not enough individuals to pick without replacement!')
+
+        chosen = []
+        if replacement:
+            for i in range(0, k):
+                players = numpy.random.choice(individuals, n).tolist()
+                if self.weights[key] >= 0:
+                    winner = players[players.index(max(players, key=lambda x: x.values[key]))]
+                else:
+                    winner = players[players.index(min(players, key=lambda x: x.values[key]))]
+                chosen.append(winner)
+        else:
+            not_picked_individuals = list.copy(individuals)
+            for i in range(0, k):
+                players = numpy.random.choice(not_picked_individuals, n).tolist()
+                if self.weights[key] >= 0:
+                    winner_index = players.index(max(players, key=lambda x: x.values[key]))
+                    winner = not_picked_individuals[winner_index]
+                else:
+                    winner_index = players.index(min(players, key=lambda x: x.values[key]))
+                    winner = not_picked_individuals[winner_index]
+                not_picked_individuals.remove(winner)
+                chosen.append(winner)
+
+        return chosen
 
     @staticmethod
-    def create_couples(individuals, size, length, key=None, select_function=None, replacement=False):
+    def create_couples(individuals: list, size: int, length: int, key: int=None, select_function=None, replacement: bool=False):
         """
             Creates list of tuples where one tuple is a 'couple'. If key is None then algorithm packs
             individuals in tuples in order they are stored in a list. If key is chosen then individuals are
@@ -223,5 +266,6 @@ class Individual:
         return self.chromosome.binary
 
     def __repr__(self):
-        return "<{} {}>".format(self.chromosome.binary, self.values[0])
+        return "<{} {} {}>".format(self.chromosome.binary, self.values[0], self.__hash__())
         #return "<{}>".format(self.values[0])
+
