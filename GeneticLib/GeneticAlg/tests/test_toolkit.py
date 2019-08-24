@@ -1,3 +1,4 @@
+import copy
 import unittest
 from GeneticAlg import toolkit
 
@@ -11,7 +12,7 @@ class Test:
 class TestToolkitMethods(unittest.TestCase):
 
     def setUp(self):
-        self.toolkit = toolkit.Toolkit()
+        self.toolkit = toolkit.Toolkit(0, 0)
         self.toolkit.set_fitness_weights((1,))
         self.individuals = [toolkit.Individual(1), toolkit.Individual(2), toolkit.Individual(3), toolkit.Individual(4)]
         self.toolkit.calculate_fitness_values(self.individuals, [Test.func])
@@ -116,3 +117,19 @@ class TestToolkitMethods(unittest.TestCase):
             else:
                 raise ValueError("Wrong individual in result!")
         self.assertEqual(k, len(selected_inds))
+
+    def test_if_select_threshold_raises_value_error(self):
+        k, n = 4, 0.5
+        with self.assertRaises(ValueError):
+            self.toolkit.select_threshold(self.individuals, k=k, n=n, key=0, replacement=False)
+
+    def test_mutation_when_zero_probability(self):
+        indvs = copy.copy(self.individuals)
+        self.toolkit.mutate(indvs, Test.func)
+        self.assertEqual(indvs, self.individuals)
+
+    def test_crossover_when_zero_probability(self):
+        couples = self.toolkit.create_couples(self.individuals, size=2, length=2)
+        offspring = self.toolkit.cross(couples, Test.func)
+        self.assertEqual(offspring, self.individuals)
+

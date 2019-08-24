@@ -4,8 +4,10 @@ import numpy.random
 
 class Toolkit:
 
-    def __init__(self):
+    def __init__(self, crossing_probability, mutation_probability):
         self.weights = tuple()
+        self.CPB = crossing_probability
+        self.MPB = mutation_probability
 
     def set_fitness_weights(self, weights: 'tuple of ints'):
         """
@@ -252,7 +254,7 @@ class Toolkit:
         else:
             sorted_individuals = sorted(individuals, key=lambda x: x.values[key])[:amount_of_indvs_used]
 
-        probabilities = [1/amount_of_indvs_used for _ in range(amount_of_indvs_used)]
+        probabilities = [1 / amount_of_indvs_used for _ in range(amount_of_indvs_used)]
 
         return numpy.random.choice(sorted_individuals, k, replace=replacement, p=probabilities).tolist()
 
@@ -293,11 +295,40 @@ class Toolkit:
 
         return couples
 
+    def mutate(self, individuals: list, mutation_fun):
+        """
+            Attributes:
+                individuals: list of individuals
+                mutation_fun: function used in mutating
+        """
+        for individual in individuals:
+            if numpy.random.randint(0, 101, 1) < self.MPB:
+                mutation_fun(individual)
+
+    def cross(self, couples: list, crossover_fun):
+        """
+                Note: crossover function should return list of offspring
+                Attributes:
+                    couples: list of tuples in which couples are stored
+                    crossover_fun: function used to cross couple, should return list of children
+                Returns:
+                    list of individuals
+        """
+        offspring = []
+        for couple in couples:
+            if numpy.random.randint(0, 101, 1) < self.CPB:
+                children = crossover_fun(couple, self.CPB)
+                offspring += children
+            else:
+                offspring.extend(couple)
+        return offspring
+
 
 class Individual:
     """
         Object that contains chromosome and values calculated by chosen fitness functions
     """
+
     def __init__(self, chromosome=None):
         self.chromosome = chromosome
         self.values = None
@@ -306,5 +337,5 @@ class Individual:
         return self.__repr__()
 
     def __repr__(self):
-        return "<{} {} {}>".format(self.chromosome, self.values[0], self.__hash__())
+        return "<{} {} {}>".format(self.chromosome, self.values[0] if isinstance(self.values, tuple) else None, self.__hash__())
         # return "<{}>".format(self.values[0])
